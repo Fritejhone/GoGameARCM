@@ -1,0 +1,13 @@
+# To get started with security, check out the documentation:
+# https://symfony.com/doc/current/security.html
+security:
+
+    providers:
+        in_memory:
+            memory: ~
+
+    firewalls:
+        main:
+            anonymous: ~
+#            pattern: ^/
+#            security: false

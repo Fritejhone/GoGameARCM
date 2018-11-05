@@ -1,0 +1,33 @@
+{% extends '@App/layout/layout.html.twig' %}
+
+{% block title %}Accueil{% endblock %}
+
+{% block css %}
+
+{% endblock %}
+
+{% block content %}
+    <div class="">
+
+        <br>
+        <br>
+        <br>
+        <br>
+
+        <div class="panel panel-info">
+            <div class="panel-heading"><h2 class="text-center">Bienvenue sur notre jeu de GO</h2></div>
+            <div class="panel-body">
+                {{ form_start(form) }}
+                {{ form_widget(form) }}
+                <button type="submit" class="btn btn-success center-block">
+                    Jouer
+                </button>
+                {{ form_end(form) }}
+            </div>
+        </div>
+
+    </div>
+
+{% endblock %}
+
+{% block js %}{% endblock %}

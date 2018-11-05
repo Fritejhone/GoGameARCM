@@ -1,0 +1,12 @@
+<li class="comment user-comment">
+  <div class="info">
+      <a>{{ comment.sender.pseudo }}</a>
+    <span>{{ comment.created|date('Ymd') < "now"|date_modify("-1 day")|date("Ymd") ? comment.created|date('d/m/Y H:i')  : comment.created|time_diff }}</span>
+  </div>
+  <a class="avatar fitsquare-wrap">
+    <img src="{{ asset('assets/img/user.png') }}" alt="..." class="img-circle">
+  </a>
+  <p class="">
+    {{ comment.content|nl2br }}
+  </p>
+</li>

@@ -1,0 +1,12 @@
+# This file is auto-generated during the composer install
+parameters:
+    database_host: localhost
+    database_port: null
+    database_name: gogame
+    database_user: root
+    database_password: null
+    mailer_transport: null
+    mailer_host: null
+    mailer_user: null
+    mailer_password: null
+    secret: jhfdkjhfdsjhkjhojhjhfjqhfjhdsf5485646fddsjhdsf
