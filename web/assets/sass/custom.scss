@@ -3,6 +3,41 @@
   float: left;
 }
 
+.li-comment{
+  display: flow-root;
+}
+
+.panel{
+  margin-bottom: 0 !important;
+}
+
+.user-comment{
+  width: fit-content;
+  border: solid 1px grey;
+  border-radius: 5px;
+  padding: 5px;
+  margin-top: 4px;
+}
+
+.user-comment.right{
+  float: right;
+  background-color: #149bdf;
+  word-break: break-all;
+}
+
+.user-comment.left{
+  float: left;
+  background-color: #c9c9d4;
+  word-break: break-all;
+}
+
+.list{
+  min-height: 200px;
+  max-height: 480px;
+  overflow-y: auto;
+  margin-bottom: 0 !important;
+}
+
 .btn-board:after {
   content: "";
   display: block;
@@ -16,7 +51,7 @@
 }
 
 .empty:hover{
-  background-color: chartreuse;
+  background-color: #64ff7d;
 }
 
 .black{

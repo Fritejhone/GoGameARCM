@@ -37,16 +37,28 @@ class Game
     private $users;
 
     /**
+     * Many Positions have One Game.
+     * @ORM\OneToMany(targetEntity="Position", mappedBy="game", cascade={"remove"})
+     */
+    private $positions;
+
+    /**
+     * Many Comments have One Game.
+     * @ORM\OneToMany(targetEntity="Comment", mappedBy="game", cascade={"remove"})
+     */
+    private $comments;
+
+    /**
      * @ORM\Column(name="is_waiting", type="integer")
      *
      */
     protected $isWaiting;
 
-    //TODO : ajouter système de points, le positionnement
-
     public function __construct()
     {
         $this->users = new ArrayCollection();
+        $this->positions = new ArrayCollection();
+        $this->comments = new ArrayCollection();
     }
 
     /**
@@ -114,4 +126,73 @@ class Game
     {
         return $this->users;
     }
+
+    /**
+     * Add position
+     *
+     * @param Position $position
+     *
+     * @return Game
+     */
+    public function addPosition(Position $position)
+    {
+        $this->positions[] = $position;
+
+        return $this;
+    }
+
+    /**
+     * Remove position
+     *
+     * @param Position $position
+     */
+    public function removePosition(Position $position)
+    {
+        $this->positions->removeElement($position);
+    }
+
+    /**
+     * Get positions
+     *
+     * @return \Doctrine\Common\Collections\Collection
+     */
+    public function getPositions()
+    {
+        return $this->positions;
+    }
+
+    /**
+     * Add comment
+     *
+     * @param Comment $comment
+     *
+     * @return Game
+     */
+    public function addComment(Comment $comment)
+    {
+        $this->comments[] = $comment;
+
+        return $this;
+    }
+
+    /**
+     * Remove comment
+     *
+     * @param Comment $comment
+     */
+    public function removeComment(Comment $comment)
+    {
+        $this->comments->removeElement($comment);
+    }
+
+    /**
+     * Get comments
+     *
+     * @return \Doctrine\Common\Collections\Collection
+     */
+    public function getComments()
+    {
+        return $this->comments;
+    }
+
 }

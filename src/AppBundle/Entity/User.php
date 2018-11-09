@@ -39,6 +39,19 @@ class User
     private $game;
 
     /**
+     * Many Positions have One User.
+     * @ORM\OneToMany(targetEntity="Position", mappedBy="user", cascade={"remove"})
+     */
+    private $positions;
+
+    /**
+     * Many Comments have One User.
+     * @ORM\OneToMany(targetEntity="Comment", mappedBy="sender", cascade={"remove"})
+     */
+    private $comments;
+
+
+    /**
      * @return int
      */
     public function getId()
@@ -84,6 +97,74 @@ class User
     public function setGame($game)
     {
         $this->game = $game;
+    }
+
+    /**
+     * Add position
+     *
+     * @param Position $position
+     *
+     * @return User
+     */
+    public function addPosition(Position $position)
+    {
+        $this->positions[] = $position;
+
+        return $this;
+    }
+
+    /**
+     * Remove position
+     *
+     * @param Position $position
+     */
+    public function removePosition(Position $position)
+    {
+        $this->positions->removeElement($position);
+    }
+
+    /**
+     * Get positions
+     *
+     * @return \Doctrine\Common\Collections\Collection
+     */
+    public function getPositions()
+    {
+        return $this->positions;
+    }
+
+    /**
+     * Add comment
+     *
+     * @param Comment $comment
+     *
+     * @return Game
+     */
+    public function addComment(Comment $comment)
+    {
+        $this->comments[] = $comment;
+
+        return $this;
+    }
+
+    /**
+     * Remove comment
+     *
+     * @param Comment $comment
+     */
+    public function removeComment(Comment $comment)
+    {
+        $this->comments->removeElement($comment);
+    }
+
+    /**
+     * Get comments
+     *
+     * @return \Doctrine\Common\Collections\Collection
+     */
+    public function getComments()
+    {
+        return $this->comments;
     }
 
 }

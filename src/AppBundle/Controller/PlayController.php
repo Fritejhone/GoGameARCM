@@ -3,6 +3,7 @@
 namespace AppBundle\Controller;
 
 use AppBundle\Entity\Game;
+use AppBundle\Entity\Position;
 use AppBundle\Entity\User;
 use Doctrine\ORM\EntityManagerInterface;
 use Pusher\Pusher;
@@ -11,7 +12,7 @@ use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Sensio\Bundle\FrameworkExtraBundle\Configuration\Method;
 use Sensio\Bundle\FrameworkExtraBundle\Configuration\Route;
-
+use Sensio\Bundle\FrameworkExtraBundle\Configuration\ParamConverter;
 
 /**
  * Play controller.
@@ -30,7 +31,7 @@ class PlayController extends Controller
     }
 
     /**
-     * @Route("/{user}", name="play")
+     * @Route("/{user}", name="play", options={"expose"=true})
      * @param Request $request
      * @param User $user
      * @return \Symfony\Component\HttpFoundation\Response
@@ -38,10 +39,49 @@ class PlayController extends Controller
      */
     public function playAction(Request $request, User $user)
     {
+
         //Gestion du rechargement de page
         //On regarde si le joueur a déjà une partie en cours
-        if($user->getGame()){
-            return $this->render('@App/play/play.html.twig', array('game' => $user->getGame(), 'user' => $user));
+        if($user->getGame() && $user->getGame()->getIsWaiting() === 0){
+
+            //Récupération du tour en cours et de ma couleur
+
+            //Il y a pas eu de coups de joué et j'ai l'id le plus petit ==> premier à jouer et couleur noire
+            if($user->getGame()->getPositions()->isEmpty()){
+
+                foreach($user->getGame()->getUsers()->getIterator() as $i => $item) {
+                    //do things with $item
+                    if($item !== $user){
+                        if($item->getId() > $user->getId()){
+                            $myTurn = 1;
+                            $myColor = 0;
+                        }
+                        else{
+                            $myTurn = 0;
+                            $myColor = 1;
+                        }
+                    }
+                }
+            }
+            //Il y a eu des coups de joués, je regarde qui a joué le dernier et la couleur et l'id ==> si c'est moi je récupère ma couleur et ce n'est pas mon tour
+            else{
+                /** @var Position $pos */
+                $pos = $user->getGame()->getPositions()->last();
+                if($pos->getUser() === $user){
+                    $myTurn = 0;
+                    $myColor = $pos->getColor();
+                }
+                //Sinon, je suis l'inverse de la couleur et c'est mon tour
+                else{
+                    $myTurn = 1;
+                    $myColor = $pos->getColor() == 1 ? 0 : 1;
+                }
+            }
+
+            return $this->render('@App/play/play.html.twig', array('game' => $user->getGame(), 'user' => $user, 'myColor' => $myColor, 'myTurn' => $myTurn));
+        }
+        else if ($user->getGame() && $user->getGame()->getIsWaiting() === 1){
+            return $this->render('@App/play/wait.html.twig', array('user' => $user, 'game' => $user->getGame()));
         }
 
         //On cherche s'il y a une partie en attente d'un second joueur
@@ -70,8 +110,10 @@ class PlayController extends Controller
             $data['message'] = $user->getId();
             $this->pusher->trigger('game-' . $game->getId(), 'new_player', $data);
 
+            return $this->render('@App/play/play.html.twig', array('game' => $game, 'user' => $user, 'myColor' => 1, 'myTurn' => 0));
+
         }
-        //Sinon, création d'une partie
+        //Sinon, création d'une partie et mise en attente
         else{
 
             $game = new Game();
@@ -85,48 +127,62 @@ class PlayController extends Controller
 
             $this->em->persist($user);
             $this->em->flush();
-        }
 
-        return $this->render('@App/play/play.html.twig', array('game' => $game, 'user' => $user));
+            return $this->render('@App/play/wait.html.twig', array('user' => $user, 'game' => $game));
+
+        }
     }
 
     /**
      * Retourne un joueur
      *
-     * @Route("/newTurn", options={"expose"=true}, name="new_turn")
+     * @Route("/newTurn/{id}", options={"expose"=true}, name="new_turn")
      * @Method("POST")
      * @param Request $request
      * @return JsonResponse
+     * @throws \Pusher\PusherException
      */
-    public function newTurnAction(Request $request)
+    public function newTurnAction(User $user, Request $request)
     {
-        if (null !== $request->get('id') && null !== $request->get('color') && null !== $request->get('posX') && null !== $request->get('posY')) {
-            //Update the game
+        if (null !== $request->get('color') && null !== $request->get('posX') && null !== $request->get('posY')) {
+
+            /** @var Game $game */
+            $game = $user->getGame();
+
+            $pos = new Position();
+            $pos->setGame($game);
+            $pos->setUser($user);
+            $pos->setPosX($request->get('posX'));
+            $pos->setPosY($request->get('posY'));
+            $pos->setColor($request->get('color'));
+            //Update the game --> Insert a new pos in BDD
+
+            $this->em->persist($pos);
+
+            $game->addPosition($pos);
+
+            $this->em->persist($game);
+            $this->em->flush();
+
+            //Trigger pusher
+            $data['message'] = $pos->getId();
+            $this->pusher->trigger('game-' . $game->getId(), 'new_turn', $data);
 
         }
         return new JsonResponse(['message' => 'OK']);
     }
 
-//    /**
-//     * @Route("/pusher", name="pusher")
-//     * @param PusherLogger $log
-//     * @return \Symfony\Component\HttpFoundation\Response
-//     * @throws \Symfony\Component\DependencyInjection\Exception\ServiceNotFoundException
-//     * @throws \Symfony\Component\DependencyInjection\Exception\ServiceCircularReferenceException
-//     */
-//    public function testPusher(PusherLogger $log)
-//    {
-//
-//        /** @var Pusher $pusher */
-//        $pusher = $this->container->get('lopi_pusher.pusher');
-//        $pusher->set_logger($log);
-//
-//        $data['message'] = 'hello world';
-//        dump($pusher->trigger('test_channel', 'my_event', $data));
-//
-//        return $this->render('@App/default/pusher.html.twig');
-//
-//
-//    }
-
+    /**
+     * Retourne un coup
+     *
+     * @Route("/getTurn/{id}", options={"expose"=true}, name="get_turn")
+     * @Method("GET")
+     * @param Position $position
+     * @ParamConverter("position", class="AppBundle:Position")
+     * @return JsonResponse
+     */
+    public function GetTurnAction(Position $position)
+    {
+        return new JsonResponse(['id' => $position->getId(), 'posX' => $position->getPosX(), 'posY' => $position->getPosY(), 'color' => $position->getColor()]);
+    }
 }

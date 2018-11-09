@@ -47,27 +47,4 @@ class DefaultController extends Controller
             'form' => $form->createView(),
         ));
     }
-
-//    /**
-//     * @Route("/pusher", name="pusher")
-//     * @param PusherLogger $log
-//     * @return \Symfony\Component\HttpFoundation\Response
-//     * @throws \Symfony\Component\DependencyInjection\Exception\ServiceNotFoundException
-//     * @throws \Symfony\Component\DependencyInjection\Exception\ServiceCircularReferenceException
-//     */
-//    public function testPusher(PusherLogger $log)
-//    {
-//
-//        /** @var Pusher $pusher */
-//        $pusher = $this->container->get('lopi_pusher.pusher');
-//        $pusher->set_logger($log);
-//
-//        $data['message'] = 'hello world';
-//        dump($pusher->trigger('test_channel', 'my_event', $data));
-//
-//        return $this->render('@App/default/pusher.html.twig');
-//
-//
-//    }
-
 }

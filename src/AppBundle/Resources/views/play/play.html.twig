@@ -8,20 +8,20 @@
 
 {% block content %}
     <div>
-        <div id="data" data-status-game="{{ game.isWaiting }}" data-id-me="{{ user.id }}"
-             data-id-game="{{ game.id }}"></div>
+        <div id="data" data-status-game="{{ game.isWaiting }}" data-id-me="{{ user.id }}" data-id-game="{{ game.id }}" data-id-mycolor="{{ myColor }}" data-id-myturn="{{ myTurn }}"></div>
         <div class="panel panel-info">
-            <div class="panel-heading"><h2 class="text-center" id="opponent-name">Recherche d'un adversaire ...</h2>
+            <div class="panel-heading"><h2 class="text-center">Bonjour, {{ user.pseudo }}</h2>
             </div>
             <div class="panel-body">
                 <div>
-                    <div class="row">
-                        <div class="col-md-7 col-xs-12" style="background-color: lightgray;">
+                    <div class="row" style="padding-left: 15px">
+                        <div id='board' class="col-md-7 col-xs-12" style="background-color: lightgray;">
                             {% for i in 0..12 %}
                                 <div class="row">
                                     <div class="col-md-12" style="padding: 0">
+                                        {#TODO : Gerer le remplissage de la grille en cas de rechargement de page#}
                                         {% for j in 0..12 %}
-                                            <div class="btn-board empty" data-x="{{ i }}" data-y="{{ j }}"></div>
+                                            <div class="btn-board empty" id='{{ i }}-{{ j }}' data-x="{{ i }}" data-y="{{ j }}"></div>
                                         {% endfor %}
                                     </div>
                                 </div>
@@ -35,14 +35,14 @@
                                         <span style="color: white"><strong>Chat de la partie</strong></span>
                                     </div>
                                 </div>
-                                <div class="panel-body" style="min-height: 200px">
-                                    {#{% for comment in game.comments %}#}
-                                    {#{% include '@App/comment/single.html.twig' %}#}
-                                    {#{% endfor %}#}
-                                </div>
+                                <ul class="list list-unstyled panel-body" id="msg-list">
+                                    {% for comment in user.game.comments %}
+                                        {% include '@App/comment/single.html.twig' %}
+                                    {% endfor %}
+                                </ul>
                                 <div class="panel-footer">
                                     <form method="POST" class="add-comment"
-                                          action="{{ path('comment_post', {'id': game.id}) }}">
+                                          action="{{ path('comment_post', {'id': user.id}) }}">
                                         <div class="form-group">
                                                 <textarea
                                                         class="form-control autoExpand"
@@ -57,7 +57,7 @@
                                             <div class="col-xs-12">
                                                 <div class="text-right">
                                                     <input type="hidden" name="game" value="{{ game.id }}">
-                                                    <button class=" clickableElement btn btn-xs btn-dblue">
+                                                    <button id='msg_form_btn' class=" clickableElement btn btn-xs btn-dblue">
                                                         <i class="fa fa-send"></i>
                                                         Envoyer
                                                     </button>
@@ -81,116 +81,118 @@
     <script>
         $(function () {
 
+            //Récupération de mon id et de la partie
             let me = $('#data').data('id-me');
             let game = $('#data').data('id-game');
-            let opponent;
+            let myTurn = $('#data').data('id-myturn') === 1;
+            let myColor = $('#data').data('id-mycolor');
 
             //Abonnement au channel propre à la partie
             let gameChannel = pusher.subscribe('game-' + game);
 
-            //Si la partie est en attente j'écoute l'evenement nouveau joueur
-            if ($('#data').data('status-game') === 1) {
-                //Notification en temps réel
-                gameChannel.bind('new_player', function (data) {
-                    opponent = data.message;
-                    $.get(Routing.generate('get_player', {id: data.message}, false))
-                        .done(function (ret) {
-                            if (!data.error) {
-                                $('#opponent-name').text('Vous jouez contre ' + ret.pseudo);
-                            }
-                            else {
-                                console.log(data.error);
-                            }
-                        }).then(function () {
-                        startGame(me, opponent);
+            initComments(gameChannel, me);
 
-                    });
-                });
-            }
-            else {
-                //Look for opponent name
-                $.get(Routing.generate('get_opponent', {me: me, game: game}, false))
+            //Ecouteur sur l'evenement nouveau coup
+            gameChannel.bind('new_turn', function (data) {
+                $.get(Routing.generate('get_turn', {id: data.message}, false))
                     .done(function (ret) {
-                        opponent = ret.id;
                         if (!data.error) {
-                            $('#opponent-name').text('Vous jouez contre ' + ret.pseudo);
+
+                            //Mettre à jour le board, que si c'est pas mon tour
+                            if(!myTurn){
+                                // console.log('maj board', ret.posX, ret.color);
+                                $('#'+ret.posX+'-'+ret.posY).removeClass('empty');
+                                ret.color == 1 ? $('#'+ret.posX+'-'+ret.posY).addClass('white') : $('#'+ret.posX+'-'+ret.posY).addClass('black');
+                            }
+
+                            //Changer le tour de jeu
+                            myTurn = !myTurn;
                         }
                         else {
                             console.log(data.error);
                         }
-                    }).then(function () {
-                    startGame(me, opponent);
+                    })
+            });
 
-                });
-            }
+            //TODO : Gerer la latence du temps réel qui fait qu'on peut jouer 2 tours d'affilés // En changeant le tour par exemple ou en mettant un flag
 
-        });
-
-        function startGame(me, opponent) {
-
-            let myTurn, myColor;
-
-            //Le premier à jouer est le premier connecté
-            if (me < opponent) {
-                myTurn = true;
-                myColor = 0; // équivaut à noir
-            }
-            else {
-                myTurn = false;
-                myColor = 1; // équivaut à blanc
-            }
-
-            //Creation event chat
 
             //Ecouteur sur les boutons
             $('.btn-board').each(function () {
                 $(this).on("click", function () {
                     //Si c'est mon tour
                     if (myTurn && $(this).hasClass('empty')) {
-                        console.log($(this).data('x') + '-' + $(this).data('y'));
-                        if (myColor === 1) {
-                            $(this).removeClass('empty');
-                            $(this).addClass('white');
-                        }
 
-                        if (myColor === 0) {
-                            $(this).removeClass('empty');
-                            $(this).addClass('black');
-                        }
+                        $(this).removeClass('empty');
+                        myColor === 1 ? $(this).addClass('white') : $(this).addClass('black');
 
-                        //Envoie l'event comme quoi le joueur à choisi une case
-                        //MAJ la BDD
-                        //Change le statut du tour
+                        //AJAX request to tell backend that there is a new turn
+                        $.post(Routing.generate('new_turn', {id: me}), {color: myColor, posX: $(this).data('x'), posY : $(this).data('y')})
+                            .done(function (ret) {
+                                if (!data.error) {
+                                    // console.log('vous venez de jouer votre tour');
+                                }
+                                else{
+                                    console.log(data.error);
+                                }
+                            });
 
-
-                        // $.post(Routing.generate('new_turn', {id: me, color: myColor, posX: $(this).data('x'), posY : $(this).data('y')}, false))
-                        //     .done(function (ret) {
-                        //         if (!data.error) {
-                        //             console.log('vous venez de jouer votre tour');
-                        //         }
-                        //         else{
-                        //             console.log(data.error);
-                        //         }
-                        //     }).then(function () {
-                        //     startGame(me, opponent);
-                        //
-                        // });
-
-                        //Calcul des points + fin de partie
+                        //Calcul des points + fin de partie | serveur ou JS ou les deux
                     }
                 })
             });
 
+            //TODO : Ecouteur sur fin de partie et suppression de cases
+        });
 
-            //Ecouteur sur l'evenement nouveau coup
-            // Si c'est pas mon tour
-            if (!myTurn) {
-                //MAJ le board
-                //Change le statut du tour
+        //Fonction qui permet de gérer l'init de tout ce qui attrait aux commentaires
+        function initComments(gameChannel, me) {
 
-            }
+            //Bug de place holder à corriger
+            $("textarea[name='content']").val('');
+
+            //En cas de reload on remet les messages en bas de liste
+            $('#msg-list').scrollTop($('#msg-list')[0].scrollHeight);
+
+            $(".add-comment").submit(function (event) {
+                event.preventDefault();
+                sendComment(event, $(this), me);
+            });
+
+            //Messagerie en temps réel
+            gameChannel.bind('new_comment', function (data) {
+                $.get(Routing.generate('get_last_comment', {comment_id: data.message, user_id: me}, false))
+                    .done(function (ret) {
+                        if (!data.error) {
+                            $('#msg-list').append(ret);
+                            $('#msg-list').animate({ scrollTop: $('#msg-list').prop("scrollHeight")}, 1000);
+                        }
+                        else {
+                            console.log(data.error);
+                        }
+                    });
+            });
 
         }
+
+        //Envoi d'un commentaire
+        function sendComment(event, _, me) {
+
+            let content = _.find("textarea[name='content']").val();
+            _.find('button').prop('disabled', true);
+
+            $.post(Routing.generate('comment_post', {id: me}), { content: content }).done(function (data) {
+                if (!data.error) {
+                    //On laisse le temps réel se débrouiller d'afficher la donnée, à voir si c'est le plus pertinent
+                    _.find("textarea[name='content']").val('');
+                } else {
+                    _.append('<ul class="list-unstyled"><li> ' + data.error + '</li></ul>');
+                }
+            }).always(function () {
+                _.find('button').prop('disabled', false);
+            });
+        }
+
     </script>
 
 {% endblock %}

@@ -34,13 +34,13 @@ class Comment
 
     /**
      * Many Features have One Product.
-     * @ORM\ManyToOne(targetEntity="Project", inversedBy="comments")
+     * @ORM\ManyToOne(targetEntity="Game", inversedBy="comments")
      */
     private $game;
 
     /**
      * Many Features have One Product.
-     * @ORM\ManyToOne(targetEntity="User")
+     * @ORM\ManyToOne(targetEntity="User", inversedBy="comments")
      */
     private $sender;
 
@@ -48,7 +48,7 @@ class Comment
      * @var \DateTime $created
      *
      * @Gedmo\Timestampable(on="create")
-     * @ORM\Column(type="datetime")
+     * @ORM\Column(type="datetime", nullable=true)
      */
     private $created;
 
@@ -56,7 +56,7 @@ class Comment
      * @var \DateTime $updated
      *
      * @Gedmo\Timestampable(on="update")
-     * @ORM\Column(type="datetime")
+     * @ORM\Column(type="datetime", nullable=true)
      */
     private $updated;
 
