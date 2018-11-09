@@ -33,6 +33,12 @@ class User
     protected $pseudo;
 
     /**
+     * @ORM\Column(name="points", type="integer")
+     *
+     */
+    protected $points;
+
+    /**
      * Many Users have One Game.
      * @ORM\ManyToOne(targetEntity="Game", inversedBy="users")
      */
@@ -166,5 +172,23 @@ class User
     {
         return $this->comments;
     }
+
+    /**
+     * @return mixed
+     */
+    public function getPoints()
+    {
+        return $this->points;
+    }
+
+    /**
+     * @param mixed $points
+     */
+    public function setPoints($points)
+    {
+        $this->points = $points;
+    }
+
+
 
 }

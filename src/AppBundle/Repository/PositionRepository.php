@@ -3,6 +3,8 @@
 namespace AppBundle\Repository;
 
 
+use AppBundle\Entity\Game;
+
 /**
  * PositionRepository
  *
@@ -11,4 +13,25 @@ namespace AppBundle\Repository;
  */
 class PositionRepository extends \Doctrine\ORM\EntityRepository
 {
+    /**
+     * @param $x
+     * @param $y
+     * @param Game $game
+     * @return mixed
+     * @throws \Doctrine\ORM\NoResultException
+     * @throws \Doctrine\ORM\NonUniqueResultException
+     */
+    public function findByCoordinates($x, $y, Game $game){
+        $qb = $this->createQueryBuilder('p')
+            ->where('p.posX = :x')
+            ->andWhere('p.posY = :y')
+            ->andWhere('p.game = :game')
+            ->setParameter('x', $x)
+            ->setParameter('y', $y)
+            ->setParameter('game', $game);
+
+        return $qb->getQuery()->getSingleResult();
+
+    }
+
 }

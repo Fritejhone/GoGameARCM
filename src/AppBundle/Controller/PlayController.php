@@ -134,14 +134,14 @@ class PlayController extends Controller
     }
 
     /**
-     * Retourne un joueur
-     *
-     * @Route("/newTurn/{id}", options={"expose"=true}, name="new_turn")
-     * @Method("POST")
-     * @param Request $request
-     * @return JsonResponse
-     * @throws \Pusher\PusherException
-     */
+ * Retourne un joueur
+ *
+ * @Route("/newTurn/{id}", options={"expose"=true}, name="new_turn")
+ * @Method("POST")
+ * @param Request $request
+ * @return JsonResponse
+ * @throws \Pusher\PusherException
+ */
     public function newTurnAction(User $user, Request $request)
     {
         if (null !== $request->get('color') && null !== $request->get('posX') && null !== $request->get('posY')) {
@@ -168,6 +168,42 @@ class PlayController extends Controller
             $data['message'] = $pos->getId();
             $this->pusher->trigger('game-' . $game->getId(), 'new_turn', $data);
 
+        }
+        return new JsonResponse(['message' => 'OK']);
+    }
+
+    /**
+     * @Route("/remove/{id}", options={"expose"=true}, name="remove_pion")
+     * @Method("POST")
+     * @param Request $request
+     * @return JsonResponse
+     * @throws \Pusher\PusherException
+     */
+    public function removePionAction(User $user, Request $request)
+    {
+        if (null !== $request->get('posX') && null !== $request->get('posY')) {
+
+            /** @var Position $pos */
+            $pos = $this->em->getRepository(Position::class)->findByCoordinates($request->get('posX'), $request->get('posY'), $user->getGame());
+
+            //Trigger pusher
+            $data['posX'] = $pos->getPosY();
+            $data['posY'] = $pos->getPosX();
+            $this->pusher->trigger('game-' . $user->getGame()->getId(), 'remove_pion', $data);
+
+            $this->em->remove($pos);
+            $this->em->flush();
+
+            //On rajoute un point au user
+            $user->setPoints($user->getPoints() + 1);
+            $this->em->persist($user);
+            $this->em->flush();
+
+//            //Si on dépasse 10 points on déclenche la fin de partie
+//            if ($user->getPoints() >= 10){
+//                $data['data'] = $user->getId();
+//                $this->pusher->trigger('game-' . $user->getGame()->getId(), 'end_game', $data);
+//            }
         }
         return new JsonResponse(['message' => 'OK']);
     }

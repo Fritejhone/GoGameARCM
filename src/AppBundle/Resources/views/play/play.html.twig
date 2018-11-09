@@ -100,6 +100,8 @@
                     .done(function (ret) {
                         if (!data.error) {
 
+                            // TODO : mettre à jour le score à retourner dans la requete
+
                             //Mettre à jour le board, que si c'est pas mon tour
                             if(!myTurn){
                                 // console.log('maj board', ret.posX, ret.color);
@@ -117,6 +119,8 @@
                         }
                     })
             });
+
+            //TODO : attention au décallage entre le pion qui est joué et les pions qui doivent etre supprimés
 
             //Ecouteur sur les boutons
             $('.btn-board').each(function () {
@@ -142,13 +146,145 @@
                                 }
                             });
 
-                        //Calcul des points + fin de partie | serveur ou JS ou les deux
+                        // on cree le tableau bleu, contenant les lignes
+                        let grille = new Array();
+
+                        for ( let i = 0 ; i < 12 ; i++){
+                            grille[i] = new Array();
+                        }
+
+                        for ( let i = 0 ; i < 12 ; i++){
+                            for( let j = 0 ; j < 12 ; j++){
+                                grille[i][j] = 2;
+                            }
+                        }
+
+                        //On parcourt le board en regardant la couleur de pion de la personne qui ne vient pas de jouer
+
+                        $('.btn-board.black').each(function () {
+
+                            grille[$(this).data('x')][$(this).data('y')] = 0;
+
+                        });
+
+                        $('.btn-board.white').each(function () {
+
+                            grille[$(this).data('x')][$(this).data('y')] = 1;
+
+                        });
+
+                        // TODO : pour optimiser la boucle on peut essayer de retenir les pions déjà vérifiés
+                        // TODO : on peut également réduire le rayon de recherche autour du point joué (à une case) pour étudier l'encerclement à partir du point joué
+
+                        let opponentColor = myColor === 0 ? 1 : 0;
+
+                        //Pour chaque pion on vient regarder si il y a un pion ou un groupe de pions qui sont succeptibles de disparaitre
+                        for ( let i = 0 ; i < 12 ; i++){
+                            for( let j = 0 ; j < 12 ; j++){
+                                if (grille[i][j] !== myColor && grille[i][j] !== 2)
+                                {
+                                    //On appelle la fonction qui va checker si le pion ou le groupe de pion est encerclé
+                                    //La fonction retourne la grille avec les pions supprimés (si encerclé) et s'occupe de faire le lien avec le back
+                                    grille = checkIfSurrounded(grille, i, j, myColor, opponentColor, me);
+                                }
+                            }
+                        }
                     }
                 })
             });
 
-            //TODO : Ecouteur sur fin de partie et suppression de cases
+            //Ecouteur pour la fin de partie
+            gameChannel.bind('end_game', function (data) {
+                // TODO : faire côté back la page de fin de partie et passer par une page intermédiare
+                window.location.href = Routing.generate('homepage');
+            });
+
+            //Ne pas oublier de MAJ aussi le score
+            //Ecouteur pour la suppression d'un pion
+            gameChannel.bind('remove_pion', function (data) {
+                //On récupère les coordonnées via les datas de pusher
+                $('#'+data.posY+'-'+data.posX).removeClass('white');
+                $('#'+data.posY+'-'+data.posX).removeClass('black');
+                $('#'+data.posY+'-'+data.posX).addClass('empty');
+            });
         });
+
+        //Fonction qui permet de gérer la suppression des pions encerclés
+        function checkIfSurrounded(grille, i, j, attaquant, defenseur, me) {
+
+            // on cree le tableau bleu, contenant les lignes
+            let pointScanne = new Array();
+
+            for ( let i = 0 ; i < 12 ; i++){
+                pointScanne[i] = new Array();
+            }
+
+            for ( let i = 0 ; i < 12 ; i++){
+                for( let j = 0 ; j < 12 ; j++){
+                    pointScanne[i][j] = 0;
+                }
+            }
+
+            let toStudy = new Array();
+
+            toStudy.push([i,j]);
+
+            let toDelete = new Array();
+
+            while(toStudy.length > 0){
+
+                let pos = toStudy.shift(); //prend le premier et le retire de la liste
+
+                let x = pos.shift();
+                let y  = pos.shift();
+
+                //On regarde dans toutes les directions si il y a un point vide
+                if((x > 0 && grille[x-1][y] === 2) || (y > 0 && grille[x][y-1] === 2) || (x < 12 && grille[x+1][y] === 2) || (y < 12 && grille[x][y+1] === 2)){
+                    return grille;
+                }
+
+                //Rajouter dans la liste à suppr, de la matrice de point scannés
+                toDelete.push([x,y]);
+                pointScanne[x][y] = 1;
+
+                if(x > 0 && pointScanne[x-1][y] === 0 && grille[x-1][y] === defenseur){
+                    toStudy.push([x-1,y]);
+                }
+
+                if(y > 0 && pointScanne[x][y-1] === 0 && grille[x][y-1] === defenseur){
+                    toStudy.push([x,y-1]);
+                }
+
+                if(y < 12 && pointScanne[x][y+1] === 0 && grille[x][y+1] === defenseur){
+                    toStudy.push([x,y+1]);
+                }
+
+                if(x < 12 && grille[x+1][y] === defenseur){
+                    toStudy.push([x+1,y]);
+                }
+            }
+
+            //Si on arrive ici c'est qu'on a pas trouvé de liberté sur les points explorés
+            //On prend alors la liste des points à suppr et on MAJ la grille + on passe l'info au back qui va gérer le temps réel
+            //Tant que toDelete est pas vide
+            while(toDelete.length > 0){
+
+                let posToDelete = toDelete.shift();
+
+                let xToDelete = posToDelete.shift();
+                let yToDelete = posToDelete.shift();
+
+                //On communique à la BDD la position à suppr
+                $.post(Routing.generate('remove_pion', {id: me}), {posX: xToDelete, posY : yToDelete});
+
+                //On repasse a l'équivalent de empty dans la grille
+                grille[xToDelete][yToDelete] = 2;
+            }
+
+            console.log(grille);
+
+            return grille;
+        }
 
         //Fonction qui permet de gérer l'init de tout ce qui attrait aux commentaires
         function initComments(gameChannel, me) {

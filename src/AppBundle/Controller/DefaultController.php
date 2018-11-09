@@ -22,7 +22,7 @@ class DefaultController extends Controller
     }
 
     /**
-     * @Route("/", name="homepage")
+     * @Route("/", options={"expose"=true}, name="homepage")
      * @param Request $request
      * @return \Symfony\Component\HttpFoundation\Response
      */
@@ -33,7 +33,10 @@ class DefaultController extends Controller
         $form->handleRequest($request);
 
         if ($form->isSubmitted() && $form->isValid()) {
+            /** @var User $user */
             $user = $form->getData();
+
+            $user->setPoints(0);
 
             //Création d'un USER dans la BDD
             $this->em->persist($user);
