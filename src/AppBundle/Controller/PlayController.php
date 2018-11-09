@@ -189,6 +189,8 @@ class PlayController extends Controller
             //Trigger pusher
             $data['posX'] = $pos->getPosY();
             $data['posY'] = $pos->getPosX();
+            $data['userThatScored'] = $user->getId();
+            $data['points'] = $user->getPoints();
             $this->pusher->trigger('game-' . $user->getGame()->getId(), 'remove_pion', $data);
 
             $this->em->remove($pos);
@@ -199,11 +201,11 @@ class PlayController extends Controller
             $this->em->persist($user);
             $this->em->flush();
 
-//            //Si on dépasse 10 points on déclenche la fin de partie
-//            if ($user->getPoints() >= 10){
-//                $data['data'] = $user->getId();
-//                $this->pusher->trigger('game-' . $user->getGame()->getId(), 'end_game', $data);
-//            }
+            //Si on dépasse 10 points on déclenche la fin de partie
+            if ($user->getPoints() >= 10){
+                $data['data'] = $user->getId();
+                $this->pusher->trigger('game-' . $user->getGame()->getId(), 'end_game', $data);
+            }
         }
         return new JsonResponse(['message' => 'OK']);
     }

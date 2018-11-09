@@ -27,8 +27,22 @@
                                 </div>
                             {% endfor %}
                         </div>
-                        {#{% for position in game.positions %} {{ dump(position) }}{% endfor %}#}
                         <div class="col-md-5 col-xs-12">
+                            <div class="panel" style="border: #2c2c2c solid 1px">
+                                <div class="panel-heading" style="background-color: #2c2c2c">
+                                    <div class="panel-titles">
+                                        <i class="fa fa-comments" aria-hidden="true"></i>
+                                        <span style="color: white"><strong>Scores</strong></span>
+                                    </div>
+                                </div>
+                                <div style="text-align: center" class="panel-body" id="scores">
+                                    <p>
+                                        10 points pour gagner
+                                    </p>
+                                    {% for user in user.game.users %}<strong><p>{{  user.pseudo }} - <span id="score{{ user.id }}">{{ user. points }}</span> pts</p></strong>{% endfor %}
+                                </div>
+                            </div>
+                            <br>
                             <div class="panel" style="border: #2c2c2c solid 1px">
                                 <div class="panel-heading" style="background-color: #2c2c2c">
                                     <div class="panel-titles">
@@ -206,6 +220,9 @@
                 $('#'+data.posY+'-'+data.posX).removeClass('white');
                 $('#'+data.posY+'-'+data.posX).removeClass('black');
                 $('#'+data.posY+'-'+data.posX).addClass('empty');
+
+                // userThatScored && points tells which scrore board to update and with which value
+                $('#score'+data.userThatScored).text(data.points);
             });
         });
 
@@ -280,8 +297,6 @@
                 //On repasse a l'équivalent de empty dans la grille
                 grille[xToDelete][yToDelete] = 2;
             }
-
-            console.log(grille);
 
             return grille;
         }
