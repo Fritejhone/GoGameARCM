@@ -86,6 +86,7 @@
             let game = $('#data').data('id-game');
             let myTurn = $('#data').data('id-myturn') === 1;
             let myColor = $('#data').data('id-mycolor');
+            let moveHaveBeenTakenIntoAccountFlag = true;
 
             //Abonnement au channel propre à la partie
             let gameChannel = pusher.subscribe('game-' + game);
@@ -107,33 +108,34 @@
 
                             //Changer le tour de jeu
                             myTurn = !myTurn;
+
+                            moveHaveBeenTakenIntoAccountFlag = true;
                         }
                         else {
                             console.log(data.error);
                         }
                     })
             });
-
-            //TODO : Gerer la latence du temps réel qui fait qu'on peut jouer 2 tours d'affilés // En changeant le tour par exemple ou en mettant un flag
-
-
+            
             //Ecouteur sur les boutons
             $('.btn-board').each(function () {
                 $(this).on("click", function () {
                     //Si c'est mon tour
-                    if (myTurn && $(this).hasClass('empty')) {
+                    if (myTurn && $(this).hasClass('empty') && moveHaveBeenTakenIntoAccountFlag) {
 
-                        $(this).removeClass('empty');
-                        myColor === 1 ? $(this).addClass('white') : $(this).addClass('black');
+                        moveHaveBeenTakenIntoAccountFlag = false;
 
                         //AJAX request to tell backend that there is a new turn
                         $.post(Routing.generate('new_turn', {id: me}), {color: myColor, posX: $(this).data('x'), posY : $(this).data('y')})
                             .done(function (ret) {
                                 if (!data.error) {
                                     // console.log('vous venez de jouer votre tour');
+                                    $(this).removeClass('empty');
+                                    myColor === 1 ? $(this).addClass('white') : $(this).addClass('black');
                                 }
                                 else{
                                     console.log(data.error);
+                                    moveHaveBeenTakenIntoAccountFlag = true;
                                 }
                             });
 
