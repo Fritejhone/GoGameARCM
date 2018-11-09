@@ -19,14 +19,15 @@
                             {% for i in 0..12 %}
                                 <div class="row">
                                     <div class="col-md-12" style="padding: 0">
-                                        {#TODO : Gerer le remplissage de la grille en cas de rechargement de page#}
                                         {% for j in 0..12 %}
-                                            <div class="btn-board empty" id='{{ i }}-{{ j }}' data-x="{{ i }}" data-y="{{ j }}"></div>
+                                            {% set isEmpty = 1 %}
+                                            <div class="btn-board {% for position in game.positions %} {% if position.posX == i and position.posY == j %} {{ position.color == 1 ? 'white' : 'black' }} {% set isEmpty = 0 %} {% endif %}{% endfor %} {% if isEmpty == 1 %} empty {% endif %}" id='{{ i }}-{{ j }}' data-x="{{ i }}" data-y="{{ j }}"></div>
                                         {% endfor %}
                                     </div>
                                 </div>
                             {% endfor %}
                         </div>
+                        {#{% for position in game.positions %} {{ dump(position) }}{% endfor %}#}
                         <div class="col-md-5 col-xs-12">
                             <div class="panel" style="border: #2c2c2c solid 1px">
                                 <div class="panel-heading" style="background-color: #2c2c2c">
@@ -137,7 +138,7 @@
                                 else{
                                     console.log(data.error);
                                     moveHaveBeenTakenIntoAccountFlag = true;
-                                    //Enlever le bouton qui est passé à joué
+                                    // TODO : Enlever le bouton qui est passé à joué en cas d'erreur
                                 }
                             });
 
