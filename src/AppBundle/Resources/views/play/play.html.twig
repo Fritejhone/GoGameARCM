@@ -116,7 +116,7 @@
                         }
                     })
             });
-            
+
             //Ecouteur sur les boutons
             $('.btn-board').each(function () {
                 $(this).on("click", function () {
@@ -125,17 +125,19 @@
 
                         moveHaveBeenTakenIntoAccountFlag = false;
 
+                        $(this).removeClass('empty');
+                        myColor === 1 ? $(this).addClass('white') : $(this).addClass('black');
+
                         //AJAX request to tell backend that there is a new turn
                         $.post(Routing.generate('new_turn', {id: me}), {color: myColor, posX: $(this).data('x'), posY : $(this).data('y')})
                             .done(function (ret) {
                                 if (!data.error) {
                                     // console.log('vous venez de jouer votre tour');
-                                    $(this).removeClass('empty');
-                                    myColor === 1 ? $(this).addClass('white') : $(this).addClass('black');
                                 }
                                 else{
                                     console.log(data.error);
                                     moveHaveBeenTakenIntoAccountFlag = true;
+                                    //Enlever le bouton qui est passé à joué
                                 }
                             });
 
