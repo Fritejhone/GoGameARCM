@@ -50,4 +50,16 @@ class DefaultController extends Controller
             'form' => $form->createView(),
         ));
     }
+
+//    /**
+//     * @Route("/end", options={"expose"=true}, name="end_saloon")
+//     * @param Request $request
+//     * @return \Symfony\Component\HttpFoundation\Response
+//     */
+//    public function endAction(Request $request)
+//    {
+//        return $this->render('@App/default/end.html.twig');
+//    }
+
+
 }

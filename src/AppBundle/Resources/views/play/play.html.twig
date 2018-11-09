@@ -211,6 +211,14 @@
             gameChannel.bind('end_game', function (data) {
                 // TODO : faire côté back la page de fin de partie et passer par une page intermédiare
                 window.location.href = Routing.generate('homepage');
+                if(data.data === me){
+                    alert("Vous avez gagné !!!! Bravo :) - vous allez etre redirigé");
+                }
+                else{
+                    alert("Vous avez perdu ... - vous allez etre redirigé");
+                }
+
+                window.location.href = Routing.generate('homepage');
             });
 
             //Ne pas oublier de MAJ aussi le score
