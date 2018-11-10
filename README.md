@@ -3,7 +3,7 @@ Jeu de go
 
 #Installation
 
-Déposez le dossier complet zippé sur un serveur web (cette archive contient déjà les vendors etc...)
+Déposez le dossier complet zippé en .rar sur un serveur web (cette archive contient déjà les vendors etc...)
 Initialiser la BDD avec le script à la racine : gogame.sql
 
 #En bref
